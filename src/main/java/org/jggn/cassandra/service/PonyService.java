@@ -5,7 +5,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -16,6 +15,7 @@ import org.jggn.cassandra.repository.PonyRepository;
 import org.jggn.cassandra.utils.CassandraPager;
 import org.jggn.cassandra.utils.PonyGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.cassandra.core.query.CassandraPageRequest;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -72,6 +72,33 @@ public class PonyService {
 		return null;
 	}
 
+	public Slice<Pony> getAllByTypePage(Pageable p, EnumType type) {
+		Instant i1 = Instant.now();
+		CompletableFuture<Long> future = ponyRepository.countByType(type);
+		Instant i1p = Instant.now();
+		Long l = null;
+		try {
+			l = future.get(100, TimeUnit.MILLISECONDS);
+		} catch (InterruptedException e) {
+		} catch (ExecutionException e) {
+		} catch (TimeoutException e) {
+		}
+		Instant i2 = Instant.now();
+		Slice<Pony> slice = ponyRepository.findAllByType(p.first(), type);
+		//using a sidePageable and incrementing it in parallel
+		Pageable sidePageable = p.first();
+		//Iterate over slices
+		while(slice.hasNext()&&sidePageable.getPageNumber()<p.getPageNumber())
+		{
+			CassandraPageRequest cpr = CassandraPageRequest.of(sidePageable.next(), ((CassandraPageRequest)slice.getPageable()).getPagingState());
+			slice = ponyRepository.findAllByType(cpr, type);
+			sidePageable=sidePageable.next();
+		}
+		if (l != null) {
+			return new PageImpl<>(slice.getContent(), slice.getPageable(), l);
+		}
+		return slice;
+	}
 	public Slice<Pony> getAllByTypeManual(Pageable p, EnumType type) {
 		Instant i1 = Instant.now();
 		CompletableFuture<Long> future = ponyManualRepository.countByType(type);

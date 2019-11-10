@@ -31,9 +31,32 @@ public class PonyController {
 		}
 		return ponies;
 	}
+	
+	/**
+	 * Get ponies using spring-data-cassandra without any optimization
+	 * @param pageable
+	 * @param type
+	 * @return
+	 */
+	@GetMapping("/raw")
+	public Slice<Pony> getPoniesRaw(Pageable pageable, @RequestParam(required = true) EnumType type)
+	{
+		Instant i1 = Instant.now();
+		Slice<Pony> ponies=service.getAllByTypePage(pageable, type);
+		Instant i2 = Instant.now();
+		System.out.println("getPoniesRaw "+(i2.toEpochMilli()-i1.toEpochMilli())+" ms");
+		return ponies;
+	}
 
+	/**
+	 * Get Ponies using FetchSize to get Results from cassandra and repage it locally
+	 * @param pageable
+	 * @param type
+	 * @return
+	 */
 	@GetMapping()
 	public Slice<Pony> getPonies(Pageable pageable, @RequestParam(required = true) EnumType type) {
+		
 		Instant i1 = Instant.now();
 		Slice<Pony> ponies= service.getAllByType(pageable, type);
 		Instant i2 = Instant.now();
@@ -42,6 +65,12 @@ public class PonyController {
 
 	}
 
+	/**
+	 * Get ponies without spring-data-cassandra (no deserialization)
+	 * @param pageable
+	 * @param type
+	 * @return
+	 */
 	@GetMapping("/serialized")
 	public Slice<Pony> getPoniesSerialized(Pageable pageable, @RequestParam(required = true) EnumType type) {
 		Instant i1 = Instant.now();
