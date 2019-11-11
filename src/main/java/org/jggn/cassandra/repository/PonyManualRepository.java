@@ -41,18 +41,19 @@ public class PonyManualRepository{
 	public Slice<Pony> findAllByType(Pageable p,EnumType type)
 	{
 		Statement st = new SimpleStatement("select * from ponies.ponies_by_type where pony_type='"+type.toString()+"'");
-		st.setFetchSize(fetchSize);
+		
 		Long offset = (long)p.getPageSize()*(long)p.getPageNumber();
 		int customSize=(int) (offset>fetchSize?fetchSize:offset);
 		int targetPage=(int) (offset/fetchSize);
 		String requestedPage = null;
 		// This will be absent for the first page
-		
+		st.setFetchSize(customSize);
 		ResultSet rs = session.execute(st);
 		PagingState nextPage = rs.getExecutionInfo().getPagingState();
 		int i=0;
 		// This will be null if there are no more pages
-		while(targetPage>i && !rs.isExhausted())
+		boolean continueVal=true;
+		while(targetPage>i && rs.getAvailableWithoutFetching()>0)
 		{
 			st.setPagingState(nextPage);
 			rs = session.execute(st);
@@ -61,7 +62,7 @@ public class PonyManualRepository{
 		}
 		//offset
 		PonyDTO ponyDTO = new PonyDTO();
-		int localOffset = (int) (offset%customSize);
+		int localOffset = (int) (offset%fetchSize);
 		boolean hasNext = rs.isExhausted()||(localOffset+p.getPageSize())<rs.getAvailableWithoutFetching();
 		List<Row> rows=rs.all().stream().skip(localOffset).limit(p.getPageSize()).collect(Collectors.toList());
 		return new SliceImpl<>(rows.stream().map(t-> ponyDTO.dto(t)).collect(Collectors.toList()),p,hasNext);

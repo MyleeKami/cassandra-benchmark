@@ -60,7 +60,7 @@ public class PonyController {
 		Instant i1 = Instant.now();
 		Slice<Pony> ponies= service.getAllByType(pageable, type);
 		Instant i2 = Instant.now();
-		System.out.println("getPonies "+(i2.toEpochMilli()-i1.toEpochMilli())+" ms");
+		System.out.println("getPonies "+(i2.toEpochMilli()-i1.toEpochMilli())+" ms. Pageable:"+pageable.toString());
 		return ponies;
 
 	}

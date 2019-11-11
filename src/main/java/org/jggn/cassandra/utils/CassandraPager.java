@@ -46,7 +46,7 @@ public class CassandraPager {
 		}
 		
 		//we have a page of a fetchSize elements, we need to get a portion of these elements
-		int localOffset = (int) (offset%customSize);
+		int localOffset = (int) (offset%fetchSize);
 		boolean hasNext = slice.hasNext()||(localOffset+p.getPageSize())<slice.getSize();
 		return new SliceImpl<>(slice.stream().skip(localOffset).limit(p.getPageSize()).collect(Collectors.toList()),p,hasNext);
 		
