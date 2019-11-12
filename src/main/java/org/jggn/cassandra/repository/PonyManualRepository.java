@@ -3,6 +3,7 @@ package org.jggn.cassandra.repository;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import org.jggn.cassandra.models.EnumType;
 import org.jggn.cassandra.models.Pony;
@@ -64,7 +65,6 @@ public class PonyManualRepository{
 		PonyDTO ponyDTO = new PonyDTO();
 		int localOffset = (int) (offset%fetchSize);
 		boolean hasNext = rs.isExhausted()||(localOffset+p.getPageSize())<rs.getAvailableWithoutFetching();
-		List<Row> rows=rs.all().stream().skip(localOffset).limit(p.getPageSize()).collect(Collectors.toList());
-		return new SliceImpl<>(rows.stream().map(t-> ponyDTO.dto(t)).collect(Collectors.toList()),p,hasNext);
+		return new SliceImpl<>(StreamSupport.stream(rs.spliterator(),false).skip(localOffset).limit(p.getPageSize()).map(t-> ponyDTO.dto(t)).collect(Collectors.toList()), p, hasNext);
 	}
 }
