@@ -17,8 +17,10 @@ import org.jggn.cassandra.utils.PonyGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.cassandra.core.query.CassandraPageRequest;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -95,10 +97,15 @@ public class PonyService {
 			sidePageable=sidePageable.next();
 		}
 		if (l != null) {
-			return new PageImpl<>(slice.getContent(), slice.getPageable(), l);
+			//use PageRequest instead of builtin pageable to avoir PageRequest Jackson Serialization 
+			return new PageImpl<>(slice.getContent(),  PageRequest.of(slice.getPageable().getPageNumber(),slice.getPageable().getPageSize()), l);
 		}
-		return slice;
+		else
+		{
+			return new SliceImpl<>(slice.getContent(), PageRequest.of(slice.getPageable().getPageNumber(),slice.getPageable().getPageSize()),slice.hasNext());
+		}
 	}
+	
 	public Slice<Pony> getAllByTypeManual(Pageable p, EnumType type) {
 		Instant i1 = Instant.now();
 		CompletableFuture<Long> future = ponyManualRepository.countByType(type);
