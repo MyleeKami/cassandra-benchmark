@@ -30,8 +30,8 @@ public class CassandraPager {
 		{
 			throw new InvalidTypeException("the expected return type is not a Slice!");
 		}
-		Long offset = (long)p.getPageSize()*(long)p.getPageNumber();
-		int customSize=(int) (offset>fetchSize?offset:fetchSize);
+		Long offset = (long)(p.getPageSize())*(long)p.getPageNumber();
+		int customSize=(int) (offset>fetchSize?fetchSize:offset+p.getPageSize());
 		int targetPage=(int) (offset/fetchSize);
 		Pageable customPageable = PageRequest.of(0,customSize ,p.getSort());
 		Slice<?> slice = (Slice<?>) m.invoke(repository, convertParametersToSingleArray(customPageable,objects));
